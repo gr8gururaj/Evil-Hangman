@@ -1,54 +1,59 @@
 # Alice Vichitthavong 
 # CPSC 315
 # Cheating Hangman 
-# 5/13/13
 
 def main():
-    with open('dictionary.txt') as f:
-        lines = f.read().splitlines()
+    with open('dictionary.txt') as file:
+        words = file.read().splitlines()
     
-    exitGame = 1
-    while(exitGame == 1):       
-        length = getWordLength(lines)
-        guesses = getNumGuesses()
+    #Turn on DEBUG_MODE by setting value to 1. Turn off by setting value to 0.
+    #DEBUG_MODE displays number of words remaining after each guess is made by player.
+    DEBUG_MODE = 1
+    
+    sessionIsOpen = 1
+    while(sessionIsOpen): 
+        wordLength = promptForWordLength(words)
+        numOfGuesses = promptForNumberOfGuesses()
         
-        remainingWords = getStartingWords(lines,length)
-        status = getStartingStatus(length)
-        lettersGuessed =[]
-        gameOver = 0
-        
-        seeWordsRemaining = int(input("See count of words remaining during game play?(Enter 1 for yes, 0 for no): "))
+        remainingWords = initializeRemainingWords(words, wordLength)
+        wordStatus = initializeWordStatus(wordLength)
+        lettersAlreadyGuessed =[]
+        gameIsOver = 0
         print()
         
-        while(guesses > 0 and gameOver == 0):
-            printGameStats(remainingWords,lettersGuessed,guesses,status,seeWordsRemaining)
-            letter = promptGuess(lettersGuessed)
-            lettersGuessed.append(letter)
-            guesses -= 1
+        gameIsInProgress = numOfGuesses > 0 and gameIsOver == 0
+        while(gameIsInProgress):
+            if(DEBUG_MODE == 1):
+                printCountOfRemainingWords(remainingWords)
             
-            remainingWords = getRemainingWords(letter,remainingWords,guesses,length)
-            status = getStatus(remainingWords[0], lettersGuessed)
+            printGameStats(remainingWords,lettersAlreadyGuessed,numOfGuesses,wordStatus)
+            guess = promptForGuess(lettersAlreadyGuessed)
+            lettersAlreadyGuessed.append(guess)
+            numOfGuesses -= 1
+            
+            remainingWords = getRemainingWords(guess,remainingWords,numOfGuesses,wordLength)
+            wordStatus = getWordStatus(remainingWords[0], lettersAlreadyGuessed)
             print()
             
-            if(letter in status):
-                guesses += 1
+            if(guess in wordStatus):
+                numOfGuesses += 1
             
-            if("-" not in status):
-                gameOver = 1
+            if("-" not in wordStatus):
+                gameIsOver = 1
                 print("You win!")
-                print("The word was " + status) 
-                exitGame = int(input("Play again?(Enter 1 for yes, 0 for no): ")) 
+                print("The word was " + wordStatus) 
+                sessionIsOpen = int(input("Play again?(Enter 1 for yes, 0 for no): ")) 
                 print()     
                 
-            if(guesses == 0 and gameOver == 0):
+            if(numOfGuesses == 0 and gameIsOver == 0):
                 print("You lose!") 
                 print("The word was "  + remainingWords[0])  
-                exitGame = int(input("Play again?(Enter 1 for yes, 0 for no): "))      
+                sessionIsOpen = int(input("Play again?(Enter 1 for yes, 0 for no): "))      
                 print()
     print("Thank you for playing!")
-        
-# Print available word lengths and prompt player for a length    
-def getWordLength(lines):
+   
+# Print available word lengths and prompt player for a wordLength    
+def promptForWordLength(lines):
     wordLengths =[];  
     for i in lines:
         n = i.__len__()
@@ -67,7 +72,7 @@ def getWordLength(lines):
             return n
 
 # Prompt user for starting number of guesses
-def getNumGuesses():
+def promptForNumberOfGuesses():
     valid = 0
     while(valid == 0):
         n = int(input("Number of guesses: "))
@@ -75,14 +80,14 @@ def getNumGuesses():
             return n
 
 # return string of starting status of game    
-def getStartingStatus(n):
+def initializeWordStatus(n):
     s = ""
     for i in range(0,n):
         s += "-"
     return s
 
 # Return list of all words with length requested by player
-def getStartingWords(lines,length):
+def initializeRemainingWords(lines,length):
     words = []
     for word in lines:
         if(word.__len__() == length):
@@ -90,15 +95,13 @@ def getStartingWords(lines,length):
     return words
      
 # Print current game stats   
-def printGameStats(wordFamily,lettersGuessed,guesses,status,seeWordsRemaining):
-    if(seeWordsRemaining == 1):
-        print("Remaining words: " + str(len(wordFamily)))
+def printGameStats(wordFamily,lettersGuessed,guesses,status):
     print("Current game status: " + str(status) )
     print("Guesses remaining: " + str(guesses))
     print("Guesses made: " + str(lettersGuessed))
     
 # Prompt player to guess a letter and return the letter
-def promptGuess(lettersGuessed):
+def promptForGuess(lettersGuessed):
     l = str(input("Guess a letter: " ))   
     if(l in lettersGuessed):
         valid = 0
@@ -159,7 +162,7 @@ def getRemainingWords(letter, wordFamily,guesses,length):
                 words.append(word)
     return words
 
-def getStatus(wf,lettersGuessed):
+def getWordStatus(wf,lettersGuessed):
     status = ""
     for l in wf:
         if(l in lettersGuessed):
@@ -167,5 +170,8 @@ def getStatus(wf,lettersGuessed):
         else: 
             status += "-"
     return status
+
+def printCountOfRemainingWords(remainingWords):
+    print("Remaining words: " + str(len(remainingWords)))
 
 if __name__ == '__main__': main()
