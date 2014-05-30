@@ -46,10 +46,12 @@ def main():
                 print()     
                 
             if(numOfGuesses == 0 and gameIsOver == 0):
+                gameIsOver = 1
                 print("You lose!") 
                 print("The word was "  + remainingWords[0])  
                 sessionIsOpen = int(input("Play again?(Enter 1 for yes, 0 for no): "))      
                 print()
+                
     print("Thank you for playing!")
    
 # Print available word lengths and prompt player for a wordLength    
@@ -109,11 +111,9 @@ def promptForGuess(lettersGuessed):
             if(letter not in lettersGuessed):
                 return letter
     return letter  
- 
-# Return the list of words remaining that player can guess from
 
-
-def getRemainingWords(guess, remainingWords, numOfGuesses, wordLength):#letter, wordFamily, guesses, length):   
+#Utility method
+def generateWordFamiliesDictionary(remainingWords, guess):
     wordFamilies = dict()
     for word in remainingWords:
         status = ""
@@ -127,40 +127,47 @@ def getRemainingWords(guess, remainingWords, numOfGuesses, wordLength):#letter, 
             wordFamilies[status] = 1
         else:
             wordFamilies[status] = wordFamilies[status] + 1
-    
-    familyToReturn = ""
-    for i in range(0, wordLength):
-        familyToReturn += "-"
-        
+    return wordFamilies
+ 
+def generateListOfWords(remainingWords, guess, familyToReturn):
     words = []
-    if(numOfGuesses == 0 and familyToReturn in wordFamilies):
-        for word in remainingWords:
-            wordFamily = ""
-            for letter in word:
-                if(letter == guess):
-                    wordFamily += guess
-                else:
-                    wordFamily += "-"
-            if(wordFamily == familyToReturn):
-                words.append(word)
-    else:
-        familyToReturn = ""
-        maxCount = 0
-        for wf in wordFamilies:
-            if wordFamilies[wf] > maxCount:
-                maxCount = wordFamilies[wf]
-                familyToReturn = wf
-        
-        for word in remainingWords:
-            wf = ""
-            for l in word:
-                if(l == guess):
-                    wf += guess
-                else:
-                    wf += "-"
-            if(wf == familyToReturn):
-                words.append(word)
+    for word in remainingWords:
+        wordFamily = ""
+        for letter in word:
+            if(letter == guess):
+                wordFamily += guess
+            else:
+                wordFamily += "-"
+                
+        if(wordFamily == familyToReturn):
+            words.append(word)
     return words
+
+def findWordFamilyWithHighestCount(wordFamilies):
+    familyToReturn = ""
+    maxCount = 0
+    for wordFamily in wordFamilies:
+        if wordFamilies[wordFamily] > maxCount:
+            maxCount = wordFamilies[wordFamily]
+            familyToReturn = wordFamily
+    return familyToReturn
+                
+ 
+# Return the list of words remaining that player can guess from
+def getRemainingWords(guess, remainingWords, numOfGuesses, wordLength):#letter, wordFamily, guesses, length):   
+    wordFamilies = generateWordFamiliesDictionary(remainingWords, guess)
+    
+    familyToReturn = initializeWordStatus(wordLength)
+    canAvoidGuess = numOfGuesses == 0 and familyToReturn in wordFamilies
+    
+    if(canAvoidGuess):
+        familyToReturn = initializeWordStatus(wordLength)
+    else:
+        familyToReturn = findWordFamilyWithHighestCount(wordFamilies)
+
+    words = generateListOfWords(remainingWords, guess, familyToReturn)
+    return words
+
 
 def getWordStatus(wordFamily,lettersAlreadyGuessed):
     status = ""
