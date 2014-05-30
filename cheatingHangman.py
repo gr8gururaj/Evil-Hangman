@@ -2,6 +2,8 @@
 # CPSC 315
 # Cheating Hangman 
 
+import re
+
 def main():
     with open('dictionary.txt') as file:
         words = file.read().splitlines()
@@ -18,11 +20,10 @@ def main():
         remainingWords = initializeRemainingWords(words, wordLength)
         wordStatus = initializeWordStatus(wordLength)
         lettersAlreadyGuessed =[]
-        gameIsOver = 0
         print()
         
-        gameIsInProgress = numOfGuesses > 0 and gameIsOver == 0
-        while(gameIsInProgress):
+        gameIsOver = 0
+        while(gameIsOver == 0):
             if(DEBUG_MODE == 1):
                 printCountOfRemainingWords(remainingWords)
             
@@ -54,7 +55,6 @@ def main():
                 
     print("Thank you for playing!")
    
-# Print available word lengths and prompt player for a wordLength    
 def promptForWordLength(words):
     wordLengths =[];  
     for word in words:
@@ -67,20 +67,26 @@ def promptForWordLength(words):
     print(wordLengths)
     print()
     
-    isValidWordLength = 0
-    while(isValidWordLength == 0):
-        length = int(input("Enter word Length: "))
-        if(length in wordLengths):
-            return length
+    while(1):
+        try:
+            length = int(input("Enter word Length: "))
+            if(length in wordLengths):
+                return length
+        except ValueError:
+            print("Invalid input")   
+            print() 
 
-# Prompt user for starting number of guesses
 def promptForNumberOfGuesses():
     while(1):
-        guesses = int(input("Number of guesses(1-25): "))
-        if(guesses > 0 and guesses < 26):
-            return guesses
+        try:
+            guesses = int(input("Number of guesses(1-20): "))
+            if(guesses > 0 and guesses < 20):
+                return guesses            
+        except ValueError:
+            print("Invalid input")   
+            print() 
 
-# return string of starting status of game    
+  
 def initializeWordStatus(length):
     status = ""
     for i in range(0,length):
@@ -95,24 +101,55 @@ def initializeRemainingWords(lines,length):
             words.append(word)
     return words
      
-# Print current game stats   
 def printGameStats(wordFamily, lettersGuessed, guesses, status):
     print("Current game status: " + str(status) )
     print("Guesses remaining: " + str(guesses))
     print("Guesses made: " + str(lettersGuessed))
     
-# Prompt player to guess a letter and return the letter
 def promptForGuess(lettersGuessed):
-    letter = str(input("Guess a letter: " ))   
-    if(letter in lettersGuessed):
-        while(1):
-            print("\nYou already guessed " + letter)
-            letter = str(input("Guess another letter: "))
-            if(letter not in lettersGuessed):
+    letter = str(input("Guess a letter: " )).lower()   
+    pattern = re.compile("^[a-z]{1}$")
+    isInvalidGuess = letter in lettersGuessed or re.match(pattern, letter) == None
+    
+    if(isInvalidGuess):
+        while(1): 
+            print()    
+            if(re.match(pattern, letter) == None):
+                print("Invalid guess. Enter a single character")
+            if(letter in lettersGuessed):    
+                print("\nYou already guessed " + letter)
+           
+            letter = str(input("Guess a letter: " ))  
+            isValidGuess = letter not in lettersGuessed and re.match(pattern, letter) != None 
+             
+            if(isValidGuess):
                 return letter
     return letter  
 
-#Utility method
+def getWordStatus(wordFamily,lettersAlreadyGuessed):
+    status = ""
+    for letter in wordFamily:
+        if(letter in lettersAlreadyGuessed):
+            status += letter
+        else: 
+            status += "-"
+    return status
+
+# Return the list of words remaining that player can guess from
+def getRemainingWords(guess, remainingWords, numOfGuesses, wordLength):#letter, wordFamily, guesses, length):   
+    wordFamilies = generateWordFamiliesDictionary(remainingWords, guess)
+    
+    familyToReturn = initializeWordStatus(wordLength)
+    canAvoidGuess = numOfGuesses == 0 and familyToReturn in wordFamilies
+    
+    if(canAvoidGuess):
+        familyToReturn = initializeWordStatus(wordLength)
+    else:
+        familyToReturn = findWordFamilyWithHighestCount(wordFamilies)
+
+    words = generateListOfWords(remainingWords, guess, familyToReturn)
+    return words
+
 def generateWordFamiliesDictionary(remainingWords, guess):
     wordFamilies = dict()
     for word in remainingWords:
@@ -151,34 +188,8 @@ def findWordFamilyWithHighestCount(wordFamilies):
             maxCount = wordFamilies[wordFamily]
             familyToReturn = wordFamily
     return familyToReturn
-                
- 
-# Return the list of words remaining that player can guess from
-def getRemainingWords(guess, remainingWords, numOfGuesses, wordLength):#letter, wordFamily, guesses, length):   
-    wordFamilies = generateWordFamiliesDictionary(remainingWords, guess)
-    
-    familyToReturn = initializeWordStatus(wordLength)
-    canAvoidGuess = numOfGuesses == 0 and familyToReturn in wordFamilies
-    
-    if(canAvoidGuess):
-        familyToReturn = initializeWordStatus(wordLength)
-    else:
-        familyToReturn = findWordFamilyWithHighestCount(wordFamilies)
-
-    words = generateListOfWords(remainingWords, guess, familyToReturn)
-    return words
-
-
-def getWordStatus(wordFamily,lettersAlreadyGuessed):
-    status = ""
-    for letter in wordFamily:
-        if(letter in lettersAlreadyGuessed):
-            status += letter
-        else: 
-            status += "-"
-    return status
 
 def printCountOfRemainingWords(remainingWords):
-    print("DEBUG MODE Remaining words: " + str(len(remainingWords)))
+    print("(DEBUG MODE ON)Remaining words: " + str(len(remainingWords)))
 
 if __name__ == '__main__': main()
